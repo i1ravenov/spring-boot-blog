@@ -1,0 +1,98 @@
+package com.boot.blog.service;
+
+import com.boot.blog.dto.CommentDto;
+import com.boot.blog.dto.NewPostDto;
+import com.boot.blog.dto.UpdatePostDto;
+import com.boot.blog.model.Post;
+import com.boot.blog.repository.PostRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+class PostServiceTest {
+
+    @Autowired
+    private PostService postService;
+
+    @MockitoBean
+    private PostRepository postRepository;
+
+    @Test
+    void findAll_delegatesToRepository() {
+        Post post = new Post(1, "Title", "Text", List.of("tag"), 0, 0);
+        when(postRepository.findAll()).thenReturn(List.of(post));
+
+        List<Post> result = postService.findAll();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Title");
+        verify(postRepository).findAll();
+    }
+
+    @Test
+    void findById_delegatesToRepository() {
+        Post post = new Post(1, "Title", "Text", List.of("tag"), 0, 0);
+        when(postRepository.findById(1)).thenReturn(post);
+
+        Post result = postService.findById(1);
+
+        assertThat(result.getId()).isEqualTo(1);
+        verify(postRepository).findById(1);
+    }
+
+    @Test
+    void savePost_delegatesToRepository() {
+        NewPostDto dto = new NewPostDto("New", "Content", List.of("java"));
+        Post saved = new Post(5, "New", "Content", List.of("java"), 0, 0);
+        when(postRepository.save(dto)).thenReturn(saved);
+
+        Post result = postService.savePost(dto);
+
+        assertThat(result.getId()).isEqualTo(5);
+        assertThat(result.getTitle()).isEqualTo("New");
+        verify(postRepository).save(dto);
+    }
+
+    @Test
+    void deletePost_delegatesToRepository() {
+        postService.deletePost(1);
+        verify(postRepository).deletePost(1);
+    }
+
+    @Test
+    void saveComment_delegatesToRepository() {
+        CommentDto dto = new CommentDto(0, "text", 1);
+        CommentDto saved = new CommentDto(10, "text", 1);
+        when(postRepository.saveComment(dto)).thenReturn(saved);
+
+        CommentDto result = postService.saveComment(dto);
+
+        assertThat(result.id()).isEqualTo(10);
+        verify(postRepository).saveComment(dto);
+    }
+
+    @Test
+    void updatePost_delegatesToRepository() {
+        UpdatePostDto dto = new UpdatePostDto(1, "Updated", "Text", List.of("tag"));
+        Post updated = new Post(1, "Updated", "Text", List.of("tag"), 0, 0);
+        when(postRepository.updatePost(dto)).thenReturn(updated);
+
+        Post result = postService.updatePost(dto);
+
+        assertThat(result.getTitle()).isEqualTo("Updated");
+        verify(postRepository).updatePost(dto);
+    }
+
+    @Test
+    void deleteComment_delegatesToRepository() {
+        postService.deleteComment(1, 2);
+        verify(postRepository).deleteComment(1, 2);
+    }
+}
