@@ -58,6 +58,31 @@ class PostControllerIntegrationTest {
     }
 
     @Test
+    void getPosts_withTagSearch_returnsFilteredPosts() throws Exception {
+        mockMvc.perform(get("/api/posts")
+                        .param("search", "java")
+                        .param("pageNumber", "1")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts", hasSize(1)))
+                .andExpect(jsonPath("$.posts[0].title").value("First Post"));
+
+        mockMvc.perform(get("/api/posts")
+                        .param("search", "spring")
+                        .param("pageNumber", "1")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts", hasSize(2)));
+
+        mockMvc.perform(get("/api/posts")
+                        .param("search", "nonexistent")
+                        .param("pageNumber", "1")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts", hasSize(0)));
+    }
+
+    @Test
     void getPost_returnsPost() throws Exception {
         mockMvc.perform(get("/api/posts/1"))
                 .andExpect(status().isOk())

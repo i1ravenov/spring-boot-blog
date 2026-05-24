@@ -7,6 +7,7 @@ import com.boot.blog.model.Post;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
@@ -26,49 +27,41 @@ public class JdbcNativePostRepository implements PostRepository {
         this.mapper = mapper;
     }
 
+    private RowMapper<Post> postRowMapper() {
+        return (rs, rowNum) -> {
+            try {
+                return new Post(
+                        rs.getLong("id"),
+                        rs.getString("title"),
+                        rs.getString("text"),
+                        mapper.readValue(rs.getString("tags"),
+                                mapper.getTypeFactory().constructCollectionType(List.class, String.class)),
+                        rs.getInt("likes_count"),
+                        rs.getInt("comments_count")
+                );
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
     @Override
-    public List<Post> findAll() {
+    public List<Post> findAll(String search) {
+        String pattern = (search != null && !search.isBlank())
+                ? "%\"" + search.toLowerCase() + "\"%"
+                : "%";
         return jdbcTemplate.query(
-                "SELECT id, title, text, tags, likes_count, comments_count FROM post",
-                (rs, rowNum) -> {
-                    try {
-                        return new Post(
-                                rs.getLong("id"),
-                                rs.getString("title"),
-                                rs.getString("text"),
-                                mapper.readValue(rs.getString("tags"),
-                                        mapper.getTypeFactory().constructCollectionType(List.class, String.class)),
-                                rs.getInt("likes_count"),
-                                rs.getInt("comments_count")
-                        );
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                "SELECT id, title, text, tags, likes_count, comments_count FROM post WHERE LOWER(tags) LIKE ?",
+                postRowMapper(),
+                pattern
+        );
     }
 
     @Override
     public Post findById(long id) {
         return jdbcTemplate.queryForObject(
                 "SELECT id, title, text, tags, likes_count, comments_count FROM post WHERE id = ?",
-                (rs, rowNum) -> {
-                    try {
-                        return new Post(
-                                rs.getLong("id"),
-                                rs.getString("title"),
-                                rs.getString("text"),
-                                mapper.readValue(
-                                        rs.getString("tags"),
-                                        mapper.getTypeFactory()
-                                                .constructCollectionType(List.class, String.class)
-                                ),
-                                rs.getInt("likes_count"),
-                                rs.getInt("comments_count")
-                        );
-                    } catch (JsonProcessingException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
+                postRowMapper(),
                 id
         );
     }

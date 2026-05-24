@@ -1,0 +1,20 @@
+services:
+
+  blog-back-app:
+    build:
+      context: .
+      dockerfile: my-blog-backend-app/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
+
+  my-blog-front-app:
+    build: ./my-blog-front-app
+    ports:
+      - "80:80"
+    depends_on:
+      - blog-back-app
+
+volumes:
+  uploads_data:

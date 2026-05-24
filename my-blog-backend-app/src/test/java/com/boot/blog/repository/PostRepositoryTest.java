@@ -55,11 +55,40 @@ class PostRepositoryTest {
     }
 
     @Test
-    void findAll_returnsAllPosts() {
-        List<Post> posts = repository.findAll();
+    void findAll_withEmptySearch_returnsAllPosts() {
+        List<Post> posts = repository.findAll("");
         assertThat(posts).hasSize(1);
         assertThat(posts.get(0).getTitle()).isEqualTo("Test Post");
         assertThat(posts.get(0).getTags()).containsExactly("java");
+    }
+
+    @Test
+    void findAll_withMatchingTag_returnsFilteredPosts() {
+        jdbcTemplate.execute("""
+                INSERT INTO post (id, title, text, tags, likes_count, comments_count)
+                VALUES (2, 'Spring Post', 'Content', '["spring"]', 0, 0)
+                """);
+
+        List<Post> javaResults = repository.findAll("java");
+        assertThat(javaResults).hasSize(1);
+        assertThat(javaResults.get(0).getTitle()).isEqualTo("Test Post");
+
+        List<Post> springResults = repository.findAll("spring");
+        assertThat(springResults).hasSize(1);
+        assertThat(springResults.get(0).getTitle()).isEqualTo("Spring Post");
+    }
+
+    @Test
+    void findAll_withNonMatchingTag_returnsEmpty() {
+        List<Post> results = repository.findAll("nonexistent");
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    void findAll_searchIsCaseInsensitive() {
+        List<Post> results = repository.findAll("JAVA");
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getTags()).containsExactly("java");
     }
 
     @Test
@@ -79,7 +108,7 @@ class PostRepositoryTest {
         assertThat(saved.getTitle()).isEqualTo("New Post");
         assertThat(saved.getText()).isEqualTo("New content");
         assertThat(saved.getTags()).containsExactly("spring");
-        assertThat(repository.findAll()).hasSize(2);
+        assertThat(repository.findAll("")).hasSize(2);
     }
 
     @Test
@@ -94,7 +123,7 @@ class PostRepositoryTest {
     @Test
     void deletePost_removesFromDb() {
         repository.deletePost(1);
-        assertThat(repository.findAll()).isEmpty();
+        assertThat(repository.findAll("")).isEmpty();
     }
 
     @Test

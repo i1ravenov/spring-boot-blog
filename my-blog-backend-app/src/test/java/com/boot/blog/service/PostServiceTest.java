@@ -25,15 +25,26 @@ class PostServiceTest {
     private PostRepository postRepository;
 
     @Test
-    void findAll_delegatesToRepository() {
+    void findAll_withEmptySearch_returnsAll() {
         Post post = new Post(1, "Title", "Text", List.of("tag"), 0, 0);
-        when(postRepository.findAll()).thenReturn(List.of(post));
+        when(postRepository.findAll("")).thenReturn(List.of(post));
 
-        List<Post> result = postService.findAll();
+        List<Post> result = postService.findAll("");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("Title");
-        verify(postRepository).findAll();
+        verify(postRepository).findAll("");
+    }
+
+    @Test
+    void findAll_withSearch_delegatesSearchToRepository() {
+        Post post = new Post(1, "Title", "Text", List.of("java"), 0, 0);
+        when(postRepository.findAll("java")).thenReturn(List.of(post));
+
+        List<Post> result = postService.findAll("java");
+
+        assertThat(result).hasSize(1);
+        verify(postRepository).findAll("java");
     }
 
     @Test

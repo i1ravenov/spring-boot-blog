@@ -33,8 +33,8 @@ public class PostService {
         return uploadDir;
     }
 
-    public List<Post> findAll() {
-        return postRepository.findAll();
+    public List<Post> findAll(String search) {
+        return postRepository.findAll(search);
     }
 
     public Post findById(long id) {

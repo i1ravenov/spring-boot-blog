@@ -8,7 +8,7 @@ import com.boot.blog.model.Post;
 import java.util.List;
 
 public interface PostRepository {
-    List<Post> findAll();
+    List<Post> findAll(String search);
 
     Post findById(long id);
 
