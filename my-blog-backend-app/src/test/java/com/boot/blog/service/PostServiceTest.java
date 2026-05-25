@@ -6,23 +6,24 @@ import com.boot.blog.dto.UpdatePostDto;
 import com.boot.blog.model.Post;
 import com.boot.blog.repository.PostRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
-    @Autowired
-    private PostService postService;
-
-    @MockitoBean
+    @Mock
     private PostRepository postRepository;
+
+    @InjectMocks
+    private PostService postService;
 
     @Test
     void findAll_withEmptySearch_returnsAll() {
