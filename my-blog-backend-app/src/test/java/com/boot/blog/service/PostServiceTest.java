@@ -3,6 +3,7 @@ package com.boot.blog.service;
 import com.boot.blog.dto.CommentDto;
 import com.boot.blog.dto.NewPostDto;
 import com.boot.blog.dto.UpdatePostDto;
+import com.boot.blog.model.Page;
 import com.boot.blog.model.Post;
 import com.boot.blog.repository.PostRepository;
 import org.junit.jupiter.api.Test;
@@ -26,26 +27,54 @@ class PostServiceTest {
     private PostService postService;
 
     @Test
-    void findAll_withEmptySearch_returnsAll() {
+    void getPage_returnsPostsWithCorrectPaginationMetadata() {
         Post post = new Post(1, "Title", "Text", List.of("tag"), 0, 0);
-        when(postRepository.findAll("")).thenReturn(List.of(post));
+        when(postRepository.findAll("", 1, 2)).thenReturn(List.of(post, post));
+        when(postRepository.countAll("")).thenReturn(5);
 
-        List<Post> result = postService.findAll("");
+        Page page = postService.getPage("", 1, 2);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Title");
-        verify(postRepository).findAll("");
+        assertThat(page.getPosts()).hasSize(2);
+        assertThat(page.isHasPrev()).isFalse();
+        assertThat(page.isHasNext()).isTrue();
+        assertThat(page.getLastPage()).isEqualTo(3); // ceil(5/2) = 3
     }
 
     @Test
-    void findAll_withSearch_delegatesSearchToRepository() {
-        Post post = new Post(1, "Title", "Text", List.of("java"), 0, 0);
-        when(postRepository.findAll("java")).thenReturn(List.of(post));
+    void getPage_lastPage_hasNoNext() {
+        Post post = new Post(1, "Title", "Text", List.of("tag"), 0, 0);
+        when(postRepository.findAll("", 3, 2)).thenReturn(List.of(post));
+        when(postRepository.countAll("")).thenReturn(5);
 
-        List<Post> result = postService.findAll("java");
+        Page page = postService.getPage("", 3, 2);
 
-        assertThat(result).hasSize(1);
-        verify(postRepository).findAll("java");
+        assertThat(page.isHasPrev()).isTrue();
+        assertThat(page.isHasNext()).isFalse();
+        assertThat(page.getLastPage()).isEqualTo(3);
+    }
+
+    @Test
+    void getPage_emptyResult_lastPageIsOne() {
+        when(postRepository.findAll("nothing", 1, 10)).thenReturn(List.of());
+        when(postRepository.countAll("nothing")).thenReturn(0);
+
+        Page page = postService.getPage("nothing", 1, 10);
+
+        assertThat(page.getPosts()).isEmpty();
+        assertThat(page.isHasPrev()).isFalse();
+        assertThat(page.isHasNext()).isFalse();
+        assertThat(page.getLastPage()).isEqualTo(1);
+    }
+
+    @Test
+    void getPage_withTagSearch_delegatesSearchToRepository() {
+        when(postRepository.findAll("java", 1, 10)).thenReturn(List.of());
+        when(postRepository.countAll("java")).thenReturn(0);
+
+        postService.getPage("java", 1, 10);
+
+        verify(postRepository).findAll("java", 1, 10);
+        verify(postRepository).countAll("java");
     }
 
     @Test

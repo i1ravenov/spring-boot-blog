@@ -33,7 +33,7 @@ public class PostController {
     public Page getPage(@RequestParam("search") String search,
                         @RequestParam("pageNumber") int pageNumber,
                         @RequestParam("pageSize") int pageSize) {
-        return new Page(postService.findAll(search), false, false, 1);
+        return postService.getPage(search, pageNumber, pageSize);
     }
 
     @PostMapping("/posts")

@@ -48,15 +48,32 @@ public class JdbcNativePostRepository implements PostRepository {
     }
 
     @Override
-    public List<Post> findAll(String search) {
-        String pattern = (search != null && !search.isBlank())
-                ? "%\"" + search.toLowerCase() + "\"%"
-                : "%";
+    public List<Post> findAll(String search, int pageNumber, int pageSize) {
+        String pattern = toTagPattern(search);
+        int offset = (pageNumber - 1) * pageSize;
         return jdbcTemplate.query(
-                "SELECT id, title, text, tags, likes_count, comments_count FROM post WHERE LOWER(tags) LIKE ?",
+                "SELECT id, title, text, tags, likes_count, comments_count FROM post" +
+                " WHERE LOWER(tags) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
                 postRowMapper(),
+                pattern, pageSize, offset
+        );
+    }
+
+    @Override
+    public int countAll(String search) {
+        String pattern = toTagPattern(search);
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM post WHERE LOWER(tags) LIKE ?",
+                Integer.class,
                 pattern
         );
+        return count != null ? count : 0;
+    }
+
+    private String toTagPattern(String search) {
+        return (search != null && !search.isBlank())
+                ? "%\"" + search.toLowerCase() + "\"%"
+                : "%";
     }
 
     @Override

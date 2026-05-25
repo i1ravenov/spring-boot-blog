@@ -54,7 +54,34 @@ class PostControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.posts", hasSize(3)))
-                .andExpect(jsonPath("$.posts[0].title").value("First Post"));
+                .andExpect(jsonPath("$.posts[0].title").value("First Post"))
+                .andExpect(jsonPath("$.hasPrev").value(false))
+                .andExpect(jsonPath("$.hasNext").value(false))
+                .andExpect(jsonPath("$.lastPage").value(1));
+    }
+
+    @Test
+    void getPosts_pagination_returnsCorrectPage() throws Exception {
+        // pageSize=2: страница 1 → посты 1,2; страница 2 → пост 3
+        mockMvc.perform(get("/api/posts")
+                        .param("search", "")
+                        .param("pageNumber", "1")
+                        .param("pageSize", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts", hasSize(2)))
+                .andExpect(jsonPath("$.hasPrev").value(false))
+                .andExpect(jsonPath("$.hasNext").value(true))
+                .andExpect(jsonPath("$.lastPage").value(2));
+
+        mockMvc.perform(get("/api/posts")
+                        .param("search", "")
+                        .param("pageNumber", "2")
+                        .param("pageSize", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posts", hasSize(1)))
+                .andExpect(jsonPath("$.hasPrev").value(true))
+                .andExpect(jsonPath("$.hasNext").value(false))
+                .andExpect(jsonPath("$.lastPage").value(2));
     }
 
     @Test

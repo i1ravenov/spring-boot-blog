@@ -58,10 +58,38 @@ class PostRepositoryTest {
 
     @Test
     void findAll_withEmptySearch_returnsAllPosts() {
-        List<Post> posts = repository.findAll("");
+        List<Post> posts = repository.findAll("", 1, 10);
         assertThat(posts).hasSize(1);
         assertThat(posts.get(0).getTitle()).isEqualTo("Test Post");
         assertThat(posts.get(0).getTags()).containsExactly("java");
+    }
+
+    @Test
+    void findAll_pagination_limitsResults() {
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, tags) VALUES (2, 'Post 2', 'Content', '[\"java\"]')");
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, tags) VALUES (3, 'Post 3', 'Content', '[\"java\"]')");
+
+        List<Post> page1 = repository.findAll("", 1, 2);
+        List<Post> page2 = repository.findAll("", 2, 2);
+
+        assertThat(page1).hasSize(2);
+        assertThat(page2).hasSize(1);
+        assertThat(page1.get(0).getId()).isEqualTo(1);
+        assertThat(page2.get(0).getId()).isEqualTo(3);
+    }
+
+    @Test
+    void countAll_withEmptySearch_returnsTotal() {
+        assertThat(repository.countAll("")).isEqualTo(1);
+    }
+
+    @Test
+    void countAll_withMatchingTag_returnsFilteredCount() {
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, tags) VALUES (2, 'Post 2', 'Content', '[\"spring\"]')");
+
+        assertThat(repository.countAll("java")).isEqualTo(1);
+        assertThat(repository.countAll("spring")).isEqualTo(1);
+        assertThat(repository.countAll("")).isEqualTo(2);
     }
 
     @Test
@@ -71,24 +99,24 @@ class PostRepositoryTest {
                 VALUES (2, 'Spring Post', 'Content', '["spring"]', 0, 0)
                 """);
 
-        List<Post> javaResults = repository.findAll("java");
+        List<Post> javaResults = repository.findAll("java", 1, 10);
         assertThat(javaResults).hasSize(1);
         assertThat(javaResults.get(0).getTitle()).isEqualTo("Test Post");
 
-        List<Post> springResults = repository.findAll("spring");
+        List<Post> springResults = repository.findAll("spring", 1, 10);
         assertThat(springResults).hasSize(1);
         assertThat(springResults.get(0).getTitle()).isEqualTo("Spring Post");
     }
 
     @Test
     void findAll_withNonMatchingTag_returnsEmpty() {
-        List<Post> results = repository.findAll("nonexistent");
+        List<Post> results = repository.findAll("nonexistent", 1, 10);
         assertThat(results).isEmpty();
     }
 
     @Test
     void findAll_searchIsCaseInsensitive() {
-        List<Post> results = repository.findAll("JAVA");
+        List<Post> results = repository.findAll("JAVA", 1, 10);
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getTags()).containsExactly("java");
     }
@@ -124,7 +152,7 @@ class PostRepositoryTest {
         assertThat(saved.getTitle()).isEqualTo("New Post");
         assertThat(saved.getText()).isEqualTo("New content");
         assertThat(saved.getTags()).containsExactly("spring");
-        assertThat(repository.findAll("")).hasSize(2);
+        assertThat(repository.findAll("", 1, 10)).hasSize(2);
     }
 
     @Test
@@ -146,7 +174,7 @@ class PostRepositoryTest {
     @Test
     void deletePost_removesFromDb() {
         repository.deletePost(1);
-        assertThat(repository.findAll("")).isEmpty();
+        assertThat(repository.findAll("", 1, 10)).isEmpty();
     }
 
     @Test

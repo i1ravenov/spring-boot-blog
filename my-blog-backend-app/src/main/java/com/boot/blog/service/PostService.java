@@ -3,6 +3,7 @@ package com.boot.blog.service;
 import com.boot.blog.dto.CommentDto;
 import com.boot.blog.dto.NewPostDto;
 import com.boot.blog.dto.UpdatePostDto;
+import com.boot.blog.model.Page;
 import com.boot.blog.model.Post;
 import com.boot.blog.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,8 +34,11 @@ public class PostService {
         return uploadDir;
     }
 
-    public List<Post> findAll(String search) {
-        return postRepository.findAll(search);
+    public Page getPage(String search, int pageNumber, int pageSize) {
+        List<Post> posts = postRepository.findAll(search, pageNumber, pageSize);
+        int total = postRepository.countAll(search);
+        int lastPage = Math.max(1, (int) Math.ceil((double) total / pageSize));
+        return new Page(posts, pageNumber > 1, pageNumber < lastPage, lastPage);
     }
 
     public Post findById(long id) {
