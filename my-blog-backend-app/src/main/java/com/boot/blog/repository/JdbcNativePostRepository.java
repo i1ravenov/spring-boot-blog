@@ -141,7 +141,7 @@ public class JdbcNativePostRepository implements PostRepository {
             throw new RuntimeException(e);
         }
         jdbcTemplate.update(
-                "UPDATE post SET title = ?, text = ?, tags = ?, likes_count = 0, comments_count = 0 WHERE id = ?",
+                "UPDATE post SET title = ?, text = ?, tags = ? WHERE id = ?",
                 updatePostDto.title(),
                 updatePostDto.text(),
                 tagsAsJson,
