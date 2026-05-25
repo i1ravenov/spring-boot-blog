@@ -5,7 +5,6 @@ import com.boot.blog.dto.NewPostDto;
 import com.boot.blog.dto.UpdatePostDto;
 import com.boot.blog.exception.PostNotFoundException;
 import com.boot.blog.model.Post;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,13 +26,8 @@ class PostRepositoryTest {
     @TestConfiguration
     static class TestConfig {
         @Bean
-        ObjectMapper objectMapper() {
-            return new ObjectMapper();
-        }
-
-        @Bean
-        JdbcNativePostRepository jdbcNativePostRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
-            return new JdbcNativePostRepository(jdbcTemplate, objectMapper);
+        JdbcNativePostRepository jdbcNativePostRepository(JdbcTemplate jdbcTemplate) {
+            return new JdbcNativePostRepository(jdbcTemplate);
         }
     }
 
@@ -46,14 +40,19 @@ class PostRepositoryTest {
     @BeforeEach
     void setup() {
         jdbcTemplate.execute("DELETE FROM comment");
+        jdbcTemplate.execute("DELETE FROM post_tag");
         jdbcTemplate.execute("DELETE FROM post");
+        jdbcTemplate.execute("DELETE FROM tag");
         jdbcTemplate.execute("""
-                INSERT INTO post (id, title, text, tags, likes_count, comments_count)
-                VALUES (1, 'Test Post', 'Test content', '["java"]', 5, 1)
+                INSERT INTO post (id, title, text, likes_count, comments_count)
+                VALUES (1, 'Test Post', 'Test content', 5, 1)
                 """);
+        jdbcTemplate.execute("INSERT INTO tag (id, name) VALUES (1, 'java')");
+        jdbcTemplate.execute("INSERT INTO post_tag (post_id, tag_id) VALUES (1, 1)");
         jdbcTemplate.execute("INSERT INTO comment (id, text, post_id) VALUES (1, 'Test comment', 1)");
-        jdbcTemplate.execute("ALTER TABLE post ALTER COLUMN id RESTART WITH 2");
+        jdbcTemplate.execute("ALTER TABLE post    ALTER COLUMN id RESTART WITH 2");
         jdbcTemplate.execute("ALTER TABLE comment ALTER COLUMN id RESTART WITH 2");
+        jdbcTemplate.execute("ALTER TABLE tag     ALTER COLUMN id RESTART WITH 2");
     }
 
     @Test
@@ -66,8 +65,8 @@ class PostRepositoryTest {
 
     @Test
     void findAll_pagination_limitsResults() {
-        jdbcTemplate.execute("INSERT INTO post (id, title, text, tags) VALUES (2, 'Post 2', 'Content', '[\"java\"]')");
-        jdbcTemplate.execute("INSERT INTO post (id, title, text, tags) VALUES (3, 'Post 3', 'Content', '[\"java\"]')");
+        jdbcTemplate.execute("INSERT INTO post (id, title, text) VALUES (2, 'Post 2', 'Content')");
+        jdbcTemplate.execute("INSERT INTO post (id, title, text) VALUES (3, 'Post 3', 'Content')");
 
         List<Post> page1 = repository.findAll("", 1, 2);
         List<Post> page2 = repository.findAll("", 2, 2);
@@ -85,7 +84,9 @@ class PostRepositoryTest {
 
     @Test
     void countAll_withMatchingTag_returnsFilteredCount() {
-        jdbcTemplate.execute("INSERT INTO post (id, title, text, tags) VALUES (2, 'Post 2', 'Content', '[\"spring\"]')");
+        jdbcTemplate.execute("INSERT INTO post (id, title, text) VALUES (2, 'Post 2', 'Content')");
+        jdbcTemplate.execute("INSERT INTO tag (id, name) VALUES (2, 'spring')");
+        jdbcTemplate.execute("INSERT INTO post_tag (post_id, tag_id) VALUES (2, 2)");
 
         assertThat(repository.countAll("java")).isEqualTo(1);
         assertThat(repository.countAll("spring")).isEqualTo(1);
@@ -94,10 +95,9 @@ class PostRepositoryTest {
 
     @Test
     void findAll_withMatchingTag_returnsFilteredPosts() {
-        jdbcTemplate.execute("""
-                INSERT INTO post (id, title, text, tags, likes_count, comments_count)
-                VALUES (2, 'Spring Post', 'Content', '["spring"]', 0, 0)
-                """);
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, likes_count, comments_count) VALUES (2, 'Spring Post', 'Content', 0, 0)");
+        jdbcTemplate.execute("INSERT INTO tag (id, name) VALUES (2, 'spring')");
+        jdbcTemplate.execute("INSERT INTO post_tag (post_id, tag_id) VALUES (2, 2)");
 
         List<Post> javaResults = repository.findAll("java", 1, 10);
         assertThat(javaResults).hasSize(1);
@@ -125,7 +125,6 @@ class PostRepositoryTest {
     void incrementLikes_increasesCountByOne() {
         Post before = repository.findById(1);
         Post after = repository.incrementLikes(1);
-
         assertThat(after.getLikesCount()).isEqualTo(before.getLikesCount() + 1);
     }
 

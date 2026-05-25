@@ -26,23 +26,25 @@ class PostControllerIntegrationTest {
     @BeforeEach
     void setup() {
         jdbcTemplate.execute("DELETE FROM comment");
+        jdbcTemplate.execute("DELETE FROM post_tag");
         jdbcTemplate.execute("DELETE FROM post");
-        jdbcTemplate.execute("""
-                INSERT INTO post (id, title, text, tags, likes_count, comments_count)
-                VALUES (1, 'First Post', 'This is my first post', '["java","spring"]', 10, 2)
-                """);
-        jdbcTemplate.execute("""
-                INSERT INTO post (id, title, text, tags, likes_count, comments_count)
-                VALUES (2, 'Second Post', 'Learning Spring is fun', '["spring","backend"]', 25, 5)
-                """);
-        jdbcTemplate.execute("""
-                INSERT INTO post (id, title, text, tags, likes_count, comments_count)
-                VALUES (3, 'Third Post', 'Microservices guide', '["microservices","architecture"]', 40, 8)
-                """);
+        jdbcTemplate.execute("DELETE FROM tag");
+
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, likes_count, comments_count) VALUES (1, 'First Post',  'This is my first post',  10, 2)");
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, likes_count, comments_count) VALUES (2, 'Second Post', 'Learning Spring is fun',  25, 5)");
+        jdbcTemplate.execute("INSERT INTO post (id, title, text, likes_count, comments_count) VALUES (3, 'Third Post',  'Microservices guide',      40, 8)");
+
+        jdbcTemplate.execute("INSERT INTO tag (id, name) VALUES (1, 'java'), (2, 'spring'), (3, 'backend'), (4, 'microservices'), (5, 'architecture')");
+        jdbcTemplate.execute("INSERT INTO post_tag (post_id, tag_id) VALUES (1, 1), (1, 2)");        // java, spring
+        jdbcTemplate.execute("INSERT INTO post_tag (post_id, tag_id) VALUES (2, 2), (2, 3)");        // spring, backend
+        jdbcTemplate.execute("INSERT INTO post_tag (post_id, tag_id) VALUES (3, 4), (3, 5)");        // microservices, architecture
+
         jdbcTemplate.execute("INSERT INTO comment (id, text, post_id) VALUES (1, 'Комментарий к посту 1', 1)");
         jdbcTemplate.execute("INSERT INTO comment (id, text, post_id) VALUES (2, 'Ещё один комментарий к посту 1', 1)");
-        jdbcTemplate.execute("ALTER TABLE post ALTER COLUMN id RESTART WITH 4");
+
+        jdbcTemplate.execute("ALTER TABLE post    ALTER COLUMN id RESTART WITH 4");
         jdbcTemplate.execute("ALTER TABLE comment ALTER COLUMN id RESTART WITH 3");
+        jdbcTemplate.execute("ALTER TABLE tag     ALTER COLUMN id RESTART WITH 6");
     }
 
     @Test
