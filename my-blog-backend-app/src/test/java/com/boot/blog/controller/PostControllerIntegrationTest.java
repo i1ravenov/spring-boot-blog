@@ -58,6 +58,24 @@ class PostControllerIntegrationTest {
     }
 
     @Test
+    void likePost_incrementsLikesCount() throws Exception {
+        // @BeforeEach устанавливает likes_count = 10 для поста 1
+        mockMvc.perform(post("/api/posts/1/likes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(11));
+
+        mockMvc.perform(post("/api/posts/1/likes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(12));
+    }
+
+    @Test
+    void likePost_nonExistent_returns404() throws Exception {
+        mockMvc.perform(post("/api/posts/999/likes"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void getPost_nonExistent_returns404() throws Exception {
         mockMvc.perform(get("/api/posts/999"))
                 .andExpect(status().isNotFound())

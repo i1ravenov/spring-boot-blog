@@ -160,4 +160,14 @@ public class JdbcNativePostRepository implements PostRepository {
     public void deletePost(long postId) {
         jdbcTemplate.update("DELETE FROM post WHERE id = ?", postId);
     }
+
+    @Override
+    public Post incrementLikes(long id) {
+        int updated = jdbcTemplate.update(
+                "UPDATE post SET likes_count = likes_count + 1 WHERE id = ?", id);
+        if (updated == 0) {
+            throw new PostNotFoundException(id);
+        }
+        return findById(id);
+    }
 }

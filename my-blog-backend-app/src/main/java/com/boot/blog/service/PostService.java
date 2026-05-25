@@ -84,4 +84,8 @@ public class PostService {
     public void deletePost(long postId) {
         postRepository.deletePost(postId);
     }
+
+    public Post incrementLikes(long id) {
+        return postRepository.incrementLikes(id);
+    }
 }

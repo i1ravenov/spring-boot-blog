@@ -107,4 +107,15 @@ class PostServiceTest {
         postService.deleteComment(1, 2);
         verify(postRepository).deleteComment(1, 2);
     }
+
+    @Test
+    void incrementLikes_delegatesToRepository() {
+        Post updated = new Post(1, "Title", "Text", List.of("tag"), 6, 0);
+        when(postRepository.incrementLikes(1)).thenReturn(updated);
+
+        Post result = postService.incrementLikes(1);
+
+        assertThat(result.getLikesCount()).isEqualTo(6);
+        verify(postRepository).incrementLikes(1);
+    }
 }

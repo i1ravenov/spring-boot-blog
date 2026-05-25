@@ -94,6 +94,20 @@ class PostRepositoryTest {
     }
 
     @Test
+    void incrementLikes_increasesCountByOne() {
+        Post before = repository.findById(1);
+        Post after = repository.incrementLikes(1);
+
+        assertThat(after.getLikesCount()).isEqualTo(before.getLikesCount() + 1);
+    }
+
+    @Test
+    void incrementLikes_nonExistent_throwsPostNotFoundException() {
+        assertThatThrownBy(() -> repository.incrementLikes(999))
+                .isInstanceOf(PostNotFoundException.class);
+    }
+
+    @Test
     void findById_returnsCorrectPost() {
         Post post = repository.findById(1);
         assertThat(post.getId()).isEqualTo(1);
