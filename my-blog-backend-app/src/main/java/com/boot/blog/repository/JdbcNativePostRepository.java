@@ -6,6 +6,8 @@ import com.boot.blog.dto.UpdatePostDto;
 import com.boot.blog.model.Post;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.boot.blog.exception.PostNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -59,11 +61,15 @@ public class JdbcNativePostRepository implements PostRepository {
 
     @Override
     public Post findById(long id) {
-        return jdbcTemplate.queryForObject(
-                "SELECT id, title, text, tags, likes_count, comments_count FROM post WHERE id = ?",
-                postRowMapper(),
-                id
-        );
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id, title, text, tags, likes_count, comments_count FROM post WHERE id = ?",
+                    postRowMapper(),
+                    id
+            );
+        } catch (EmptyResultDataAccessException e) {
+            throw new PostNotFoundException(id);
+        }
     }
 
     @Override

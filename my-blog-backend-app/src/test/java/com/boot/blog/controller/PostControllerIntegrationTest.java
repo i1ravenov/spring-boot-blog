@@ -58,6 +58,24 @@ class PostControllerIntegrationTest {
     }
 
     @Test
+    void getPost_nonExistent_returns404() throws Exception {
+        mockMvc.perform(get("/api/posts/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Post not found: id=999"));
+    }
+
+    @Test
+    void updatePost_nonExistent_returns404() throws Exception {
+        String json = """
+                {"id":999,"title":"X","text":"Y","tags":[]}
+                """;
+        mockMvc.perform(put("/api/posts/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void getPosts_withTagSearch_returnsFilteredPosts() throws Exception {
         mockMvc.perform(get("/api/posts")
                         .param("search", "java")

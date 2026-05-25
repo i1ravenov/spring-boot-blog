@@ -3,6 +3,7 @@ package com.boot.blog.repository;
 import com.boot.blog.dto.CommentDto;
 import com.boot.blog.dto.NewPostDto;
 import com.boot.blog.dto.UpdatePostDto;
+import com.boot.blog.exception.PostNotFoundException;
 import com.boot.blog.model.Post;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @JdbcTest
 @Import(PostRepositoryTest.TestConfig.class)
@@ -118,6 +120,13 @@ class PostRepositoryTest {
         assertThat(updated.getTitle()).isEqualTo("Updated Title");
         assertThat(updated.getText()).isEqualTo("Updated text");
         assertThat(updated.getTags()).containsExactly("updated");
+    }
+
+    @Test
+    void findById_nonExistent_throwsPostNotFoundException() {
+        assertThatThrownBy(() -> repository.findById(999))
+                .isInstanceOf(PostNotFoundException.class)
+                .hasMessageContaining("999");
     }
 
     @Test
